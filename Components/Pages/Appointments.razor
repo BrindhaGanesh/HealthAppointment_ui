@@ -55,8 +55,7 @@
     {
         try
         {
-            // Fetch list from API
-            appointments = await Http.GetFromJsonAsync<Appointment[]>(requestUri: "/api/Appointments");
+            appointments = await Http.GetFromJsonAsync<Appointment[]>("api/Appointments");
         }
         catch (Exception ex)
         {

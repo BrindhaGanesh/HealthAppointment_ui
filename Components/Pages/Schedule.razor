@@ -1,4 +1,5 @@
 @page "/schedule"
+@rendermode InteractiveServer
 @using HealthcareFrontend.Models
 @using System.Net.Http.Json
 @inject HttpClient Http
@@ -13,33 +14,48 @@
                 <div class="card-header bg-primary text-white text-center">
                     <h3 class="mb-0">Book New Appointment</h3>
                 </div>
+
                 <div class="card-body">
-                    @* We use OnValidSubmit so code only runs if the form is valid *@
-                        <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit" FormName="appointmentForm">
+                    <EditForm Model="newAppt" OnValidSubmit="HandleSubmit">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-danger small" />
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Patient Name</label>
-                            <InputText @bind-Value="newAppt.PatientName" class="form-control" />
+                            <InputText
+                                class="form-control"
+                                @bind-Value="newAppt.PatientName" />
                             <ValidationMessage For="@(() => newAppt.PatientName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Doctor Name</label>
-                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" />
+                            <InputText
+                                class="form-control"
+                                @bind-Value="newAppt.DoctorName" />
                             <ValidationMessage For="@(() => newAppt.DoctorName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date and Time</label>
-                            <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newAppt.AppointmentDate" class="form-control" />
+                            <InputDate
+                                class="form-control"
+                                Type="InputDateType.DateTimeLocal"
+                                @bind-Value="newAppt.AppointmentDate" />
                             <ValidationMessage For="@(() => newAppt.AppointmentDate)" />
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success">Confirm Appointment</button>
-                            <button type="button" class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
+                            <button type="submit" class="btn btn-success">
+                                Confirm Appointment
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                @onclick='() => Nav.NavigateTo("/appointments")'>
+                                Cancel
+                            </button>
                         </div>
                     </EditForm>
                 </div>
@@ -49,27 +65,30 @@
 </div>
 
 @code {
-    // Default to tomorrow to prevent "Past Date" errors from the API
-    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddDays(1) };
+    // keep the same instance, do not recreate
+    private Appointment newAppt = new Appointment
+    {
+        AppointmentDate = DateTime.Now.AddDays(1)
+    };
 
     private async Task HandleSubmit()
     {
         try
         {
-            // IMPORTANT: The leading "/" ensures we hit the API domain, not the UI page
-            var apiUrl = "https://apihealth-hgd6fchsh0a3hddf.brazilsouth-01.azurewebsites.net/api/Appointments";
-            Console.WriteLine("Sending to API...");
+            Console.WriteLine(
+                $"Submitting: {newAppt.PatientName}, {newAppt.DoctorName}, {newAppt.AppointmentDate:o}"
+            );
 
-            var response = await Http.PostAsJsonAsync(apiUrl, newAppt);
+            var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
+
             if (response.IsSuccessStatusCode)
             {
                 Nav.NavigateTo("/appointments");
+                return;
             }
-            else
-            {
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Error: {response.StatusCode} - {errorMsg}");
-            }
+
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"API Error: {response.StatusCode} - {error}");
         }
         catch (Exception ex)
         {
