@@ -1,49 +1,45 @@
 @page "/schedule"
 @using HealthcareFrontend.Models
 @using System.Net.Http.Json
-@using Microsoft.AspNetCore.Components.Forms
 @inject HttpClient Http
 @inject NavigationManager Nav
 
-@* This ensures the page is interactive and handles the C# code on the server *@
-@rendermode InteractiveServer
-
-<PageTitle>New Appointment</PageTitle>
+<PageTitle>Schedule Appointment</PageTitle>
 
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0 text-center">Schedule Appointment</h3>
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Book New Appointment</h3>
                 </div>
                 <div class="card-body">
-                    @* FormName identifies this form to the server during submission *@
-                    <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit" FormName="appointmentForm">
+                    @* We use OnValidSubmit so code only runs if the form is valid *@
+                        <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit" FormName="appointmentForm">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-danger small" />
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Patient Name</label>
-                            <InputText @bind-Value="newAppt.PatientName" class="form-control" placeholder="Enter patient name" />
-                            <ValidationMessage For="@(() => newAppt.PatientName)" class="text-danger small" />
+                            <InputText @bind-Value="newAppt.PatientName" class="form-control" />
+                            <ValidationMessage For="@(() => newAppt.PatientName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Doctor Name</label>
-                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" placeholder="Enter doctor name" />
-                            <ValidationMessage For="@(() => newAppt.DoctorName)" class="text-danger small" />
+                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" />
+                            <ValidationMessage For="@(() => newAppt.DoctorName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date and Time</label>
                             <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newAppt.AppointmentDate" class="form-control" />
-                            <ValidationMessage For="@(() => newAppt.AppointmentDate)" class="text-danger small" />
+                            <ValidationMessage For="@(() => newAppt.AppointmentDate)" />
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">Confirm Appointment</button>
-                            <button type="button" class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
+                            <button type="button" class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
                         </div>
                     </EditForm>
                 </div>
@@ -53,31 +49,31 @@
 </div>
 
 @code {
-    @* [SupplyParameterFromForm] captures data typed into the form *@
-    [SupplyParameterFromForm]
-    public Appointment newAppt { get; set; } = new Appointment { AppointmentDate = DateTime.Now.AddDays(1) };
+    // Default to tomorrow to prevent "Past Date" errors from the API
+    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddDays(1) };
 
     private async Task HandleSubmit()
-{
-    try
     {
-        // Use this line (the green one from your image)
-        var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
+        try
+        {
+            // IMPORTANT: The leading "/" ensures we hit the API domain, not the UI page
+            var apiUrl = "https://apihealth-hgd6fchsh0a3hddf.brazilsouth-01.azurewebsites.net/api/Appointments";
+            Console.WriteLine("Sending to API...");
 
-        if (response.IsSuccessStatusCode)
-        {
-            Nav.NavigateTo("/appointments");
+            var response = await Http.PostAsJsonAsync(apiUrl, newAppt);
+            if (response.IsSuccessStatusCode)
+            {
+                Nav.NavigateTo("/appointments");
+            }
+            else
+            {
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Error: {response.StatusCode} - {errorMsg}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            var errorBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"API Failure: {response.StatusCode} - {errorBody}");
+            Console.WriteLine($"Network Error: {ex.Message}");
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Connection Error: {ex.Message}");
-    }
-}
-
 }
