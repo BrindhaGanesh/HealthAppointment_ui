@@ -1,0 +1,50 @@
+@page "/appointments"
+@using HealthcareFrontend.Models
+@inject HttpClient Http
+
+<h3>Healthcare Appointments</h3>
+
+@if (appointments == null)
+{
+    <div class="alert alert-info">Fetching data from API...</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var appt in appointments)
+            {
+                <tr>
+                    <td>@appt.PatientName</td>
+                    <td>@appt.DoctorName</td>
+                    <td>@appt.AppointmentDate.ToShortDateString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Appointment[]? appointments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            // Because we set the BaseAddress in Program.cs, 
+            // we only need the specific endpoint path here.
+            appointments = await Http.GetFromJsonAsync<Appointment[]>("api/Appointments");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"API Error: {ex.Message}");
+        }
+    }
+}
