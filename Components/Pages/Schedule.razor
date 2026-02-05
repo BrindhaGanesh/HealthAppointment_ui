@@ -10,36 +10,36 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">New Appointment</h3>
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Book New Appointment</h3>
                 </div>
                 <div class="card-body">
+                    @* We use OnValidSubmit so code only runs if the form is valid *@
                     <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-danger small" />
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Patient Name</label>
-                            <InputText @bind-Value="newAppt.PatientName" class="form-control" placeholder="Enter full name" />
-                            <ValidationMessage For="@(() => newAppt.PatientName)" class="text-danger small" />
+                            <InputText @bind-Value="newAppt.PatientName" class="form-control" />
+                            <ValidationMessage For="@(() => newAppt.PatientName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Doctor Name</label>
-                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" placeholder="Enter doctor's name" />
-                            <ValidationMessage For="@(() => newAppt.DoctorName)" class="text-danger small" />
+                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" />
+                            <ValidationMessage For="@(() => newAppt.DoctorName)" />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date and Time</label>
-                            @* Use DateTimeLocal for better browser compatibility *@
                             <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newAppt.AppointmentDate" class="form-control" />
-                            <ValidationMessage For="@(() => newAppt.AppointmentDate)" class="text-danger small" />
+                            <ValidationMessage For="@(() => newAppt.AppointmentDate)" />
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">Confirm Appointment</button>
-                            <button type="button" class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
+                            <button type="button" class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
                         </div>
                     </EditForm>
                 </div>
@@ -49,16 +49,15 @@
 </div>
 
 @code {
-    // We set the date to tomorrow by default to avoid the "Past Date" 400 error from your API
+    // Default to tomorrow to prevent "Past Date" errors from the API
     private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddDays(1) };
 
     private async Task HandleSubmit()
     {
         try
         {
-            // We use "api/Appointments" without a leading slash because Program.cs 
-            // should have the trailing slash in the BaseAddress.
-            var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
+            // IMPORTANT: The leading "/" ensures we hit the API domain, not the UI page
+            var response = await Http.PostAsJsonAsync("/api/Appointments", newAppt);
 
             if (response.IsSuccessStatusCode)
             {
@@ -66,15 +65,13 @@
             }
             else
             {
-                // If the API returns 400, this will tell us WHY (e.g., "Past Date" or "Validation Error")
-                var errorBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Rejected Request: {response.StatusCode} - {errorBody}");
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Error: {response.StatusCode} - {errorMsg}");
             }
         }
         catch (Exception ex)
         {
-            // This captures CORS or network connection issues
-            Console.WriteLine($"Critical Connection Error: {ex.Message}");
+            Console.WriteLine($"Network Error: {ex.Message}");
         }
     }
 }
