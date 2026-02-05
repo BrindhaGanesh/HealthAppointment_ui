@@ -14,7 +14,6 @@
                     <h3 class="mb-0">New Appointment</h3>
                 </div>
                 <div class="card-body">
-                    @* OnValidSubmit ensures the API is only called if names/dates are filled correctly *@
                     <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-danger small" />
@@ -33,6 +32,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Date and Time</label>
+                            @* Use DateTimeLocal for better browser compatibility *@
                             <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newAppt.AppointmentDate" class="form-control" />
                             <ValidationMessage For="@(() => newAppt.AppointmentDate)" class="text-danger small" />
                         </div>
@@ -49,31 +49,32 @@
 </div>
 
 @code {
-    // ID defaults to 0; the API/Database will replace it with a unique number
-    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddMinutes(15) };
+    // We set the date to tomorrow by default to avoid the "Past Date" 400 error from your API
+    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddDays(1) };
 
     private async Task HandleSubmit()
-{
-    try
     {
-        // Adding the leading / ensures it uses the BaseAddress properly 
-        // rather than appending to the current "schedule" URL
-        var response = await Http.PostAsJsonAsync("/api/Appointments", newAppt); 
+        try
+        {
+            // We use "api/Appointments" without a leading slash because Program.cs 
+            // should have the trailing slash in the BaseAddress.
+            var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
 
-        if (response.IsSuccessStatusCode)
-        {
-            Nav.NavigateTo("/appointments");
+            if (response.IsSuccessStatusCode)
+            {
+                Nav.NavigateTo("/appointments");
+            }
+            else
+            {
+                // If the API returns 400, this will tell us WHY (e.g., "Past Date" or "Validation Error")
+                var errorBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Rejected Request: {response.StatusCode} - {errorBody}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // This is key! If it fails, we need to see the error from the API
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"API Reject: {response.StatusCode} - {error}");
+            // This captures CORS or network connection issues
+            Console.WriteLine($"Critical Connection Error: {ex.Message}");
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Connection Error: {ex.Message}");
-    }
-}
 }
