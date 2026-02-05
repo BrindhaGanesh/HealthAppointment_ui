@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
 // Use the exact port (5260) from your API terminal.
 builder.Services.AddScoped(sp => new HttpClient 
 { 
-    BaseAddress = new Uri("https://apihealth-hgd6fchsh0a3hddf.brazilsouth-01.azurewebsites.net") 
+    BaseAddress = new Uri("https://apihealth-hgd6fchsh0a3hddf.brazilsouth-01.azurewebsites.net/") 
 });
 // ---------------------------
 

@@ -50,22 +50,30 @@
 
 @code {
     // ID defaults to 0; the API/Database will replace it with a unique number
-    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now };
+    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now.AddMinutes(15) };
 
     private async Task HandleSubmit()
+{
+    try
     {
-        try
-        {
-            var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
+        // Adding the leading / ensures it uses the BaseAddress properly 
+        // rather than appending to the current "schedule" URL
+        var response = await Http.PostAsJsonAsync("/api/Appointments", newAppt); 
 
-            if (response.IsSuccessStatusCode)
-            {
-                Nav.NavigateTo("/appointments");
-            }
-        }
-        catch (Exception ex)
+        if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Connection Error: {ex.Message}");
+            Nav.NavigateTo("/appointments");
+        }
+        else
+        {
+            // This is key! If it fails, we need to see the error from the API
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"API Reject: {response.StatusCode} - {error}");
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Connection Error: {ex.Message}");
+    }
+}
 }
