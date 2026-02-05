@@ -1,0 +1,71 @@
+@page "/schedule"
+@using HealthcareFrontend.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<PageTitle>Schedule Appointment</PageTitle>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">New Appointment</h3>
+                </div>
+                <div class="card-body">
+                    @* OnValidSubmit ensures the API is only called if names/dates are filled correctly *@
+                    <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger small" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Patient Name</label>
+                            <InputText @bind-Value="newAppt.PatientName" class="form-control" placeholder="Enter full name" />
+                            <ValidationMessage For="@(() => newAppt.PatientName)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Doctor Name</label>
+                            <InputText @bind-Value="newAppt.DoctorName" class="form-control" placeholder="Enter doctor's name" />
+                            <ValidationMessage For="@(() => newAppt.DoctorName)" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Date and Time</label>
+                            <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="newAppt.AppointmentDate" class="form-control" />
+                            <ValidationMessage For="@(() => newAppt.AppointmentDate)" class="text-danger small" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Confirm Appointment</button>
+                            <button type="button" class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/appointments")'>Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // ID defaults to 0; the API/Database will replace it with a unique number
+    private Appointment newAppt = new Appointment { AppointmentDate = DateTime.Now };
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Appointments", newAppt);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Nav.NavigateTo("/appointments");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Connection Error: {ex.Message}");
+        }
+    }
+}
