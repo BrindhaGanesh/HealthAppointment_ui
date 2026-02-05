@@ -15,7 +15,7 @@
                 </div>
                 <div class="card-body">
                     @* We use OnValidSubmit so code only runs if the form is valid *@
-                    <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit">
+                        <EditForm Model="@newAppt" OnValidSubmit="HandleSubmit" FormName="appointmentForm">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="text-danger small" />
 
@@ -57,8 +57,10 @@
         try
         {
             // IMPORTANT: The leading "/" ensures we hit the API domain, not the UI page
-            var response = await Http.PostAsJsonAsync("/api/Appointments", newAppt);
+            var apiUrl = "https://apihealth-hgd6fchsh0a3hddf.brazilsouth-01.azurewebsites.net/api/Appointments";
+            Console.WriteLine("Sending to API...");
 
+            var response = await Http.PostAsJsonAsync(apiUrl, newAppt);
             if (response.IsSuccessStatusCode)
             {
                 Nav.NavigateTo("/appointments");
